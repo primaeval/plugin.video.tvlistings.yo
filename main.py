@@ -124,7 +124,7 @@ def channel(country_id,channel_name,channel_number):
             addon = xbmcaddon.Addon(addon)
             if addon:
                 item = {
-                'label': '[COLOR yellow][B]%s[/B][/COLOR] [COLOR green][B]%s[/B][/COLOR]' % (channel_name,addon.getAddonInfo('name')),
+                'label': '[COLOR yellow][B]%s[/B][/COLOR] [COLOR green][B]%s[/B][/COLOR]' % (re.sub('_',' ',channel_name),addon.getAddonInfo('name')),
                 'path': path,
                 'is_playable': True,
                 }
@@ -532,40 +532,6 @@ def set_favourites():
     top_items.extend(sorted_items)
     return top_items
     
-@plugin.route('/store_channels')
-def store_channels():
-    addons = plugin.get_storage('addons')
-    items = []
-    for addon in addons:
-        channels = plugin.get_storage(addon)
-        channels.clear()
-    addons.clear()
-
-    ini_files = [plugin.get_setting('ini_file1'),plugin.get_setting('ini_file2')]
-    
-    for ini in ini_files:
-        try:
-            f = xbmcvfs.File(ini)
-            items = f.read().splitlines()
-            f.close()
-            addon = 'nothing'
-            for item in items:
-                if item.startswith('['):
-                    addon = item.strip('[] \t')
-                elif item.startswith('#'):
-                    pass
-                else:
-                    name_url = item.split('=',1)
-                    if len(name_url) == 2:
-                        name = name_url[0]
-                        url = name_url[1]
-                        if url:
-                            channels = plugin.get_storage(addon)
-                            channels[name] = url
-                            addons = plugin.get_storage('addons')
-                            addons[addon] = addon
-        except:
-            pass
 
 @plugin.route('/country/<country_id>/<country_name>')
 def country(country_id,country_name):
@@ -608,9 +574,6 @@ def countries():
     
 @plugin.route('/')
 def index():
-    make_templates()
-    store_channels()
-    load_channels()
     items = [  
     {
         'label': '[COLOR red][B]Countries[/B][/COLOR]',
@@ -621,5 +584,8 @@ def index():
     return items
     
 if __name__ == '__main__':
+    make_templates()
+    store_channels()
+    #load_channels()
     plugin.run()
     
