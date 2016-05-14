@@ -29,10 +29,9 @@ def get_tvdb_id(name):
         tvdb_id = tvdb_match.group(1)
     return tvdb_id
   
-@plugin.route('/play/<channel>/<title>/<season>/<episode>')
-def play(channel,title,season,episode):
-    channel_number = plugin.get_storage('channel_number')
-    #channel_items = play_channel(channel_number[channel],channel)
+@plugin.route('/play/<country_id>/<channel_name>/<channel_number>/<title>/<season>/<episode>')
+def play(country_id,channel_name,channel_number,title,season,episode):
+    channel_items = channel(country_id,channel_name,channel_number)
     items = []
     tvdb_id = ''
     if int(season) > 0 and int(episode) > 0:
@@ -104,12 +103,12 @@ def play(channel,title,season,episode):
             except:
                 pass
    
-    #items.extend(channel_items)
+    items.extend(channel_items)
     return items
 
     
-@plugin.route('/channel/<id>/<name>/<number>')
-def channel(id,name,number):
+@plugin.route('/channel/<country_id>/<channel_name>/<channel_number>')
+def channel(country_id,channel_name,channel_number):
     if plugin.get_setting('ini_reload') == 'true':
         store_channels()
         plugin.set_setting('ini_reload','false')
@@ -118,14 +117,14 @@ def channel(id,name,number):
     items = []
     for addon in addons:
         channels = plugin.get_storage(addon)
-        if not name in channels:
+        if not channel_name in channels:
             continue
-        path = channels[name]
+        path = channels[channel_name]
         try:
             addon = xbmcaddon.Addon(addon)
             if addon:
                 item = {
-                'label': '[COLOR yellow][B]%s[/B][/COLOR] [COLOR green][B]%s[/B][/COLOR]' % (name,addon.getAddonInfo('name')),
+                'label': '[COLOR yellow][B]%s[/B][/COLOR] [COLOR green][B]%s[/B][/COLOR]' % (channel_name,addon.getAddonInfo('name')),
                 'path': path,
                 'is_playable': True,
                 }
@@ -133,11 +132,11 @@ def channel(id,name,number):
         except:
             pass
 
-    url = 'http://%s.yo.tv/tv_guide/channel/%s/%s' % (id,number,name)
+    channel_url = 'http://%s.yo.tv/tv_guide/channel/%s/%s' % (country_id,channel_number,channel_name)
         
     item = {
-    'label': '[COLOR yellow][B]%s[/B][/COLOR] [COLOR red][B]Listing[/B][/COLOR]' % (re.sub('_',' ',name)),
-    'path': plugin.url_for('listing', name=name,number=number,url=url),
+    'label': '[COLOR yellow][B]%s[/B][/COLOR] [COLOR red][B]Listing[/B][/COLOR]' % (re.sub('_',' ',channel_name)),
+    'path': plugin.url_for('listing', country_id=country_id, channel_name=channel_name, channel_number=channel_number, channel_url=channel_url),
     'is_playable': False,
     }
     items.append(item)
@@ -169,9 +168,9 @@ def local_time(ttime,year,month,day):
         ttime = "%02d:%02d" % (loc_dt.hour,loc_dt.minute)
     return ttime
 
-@plugin.route('/listing/<name>/<number>/<url>')
-def listing(name,number,url):
-    html = get_url(url)
+@plugin.route('/listing/<country_id>/<channel_name>/<channel_number>/<channel_url>')
+def listing(country_id,channel_name,channel_number,channel_url):
+    html = get_url(channel_url)
 
     items = []
     month = ""
@@ -211,10 +210,10 @@ def listing(name,number,url):
         if match:
             title = match.group(1)
 
-        path = plugin.url_for('play', channel=number,title=title.encode("utf8"),season=season,episode=episode)
+        path = plugin.url_for('play', country_id=country_id, channel_name=channel_name, channel_number=channel_number,title=title.encode("utf8"),season=season,episode=episode)
         
         if title:
-            nice_name = re.sub('_',' ',name)
+            nice_name = re.sub('_',' ',channel_name)
             if  plugin.get_setting('channel_name') == 'true':
                 if plugin.get_setting('show_plot') == 'true':
                     label = "[COLOR yellow][B]%s[/B][/COLOR] %s [COLOR orange][B]%s[/B][/COLOR] %s" % (nice_name,ttime,title,plot)
@@ -238,7 +237,7 @@ def listing(name,number,url):
         if match:
             date_str = match.group(1)
             label = "[COLOR red][B]%s[/B][/COLOR]" % (date_str)
-            items.append({'label':label,'is_playable':True,'path':plugin.url_for('listing', name=name,number=number,url=url)})
+            items.append({'label':label,'is_playable':True,'path':plugin.url_for('listing', country_id=country_id, channel_name=channel_name,channel_number=channel_number,channel_url=channel_url)})
             match = re.search(r'(.*?), (.*?) (.*?), (.*)',date_str)
             if match:
                 weekday = match.group(1)
@@ -343,9 +342,9 @@ def make_templates():
 
         
         
-@plugin.route('/listings/<id>/<name>')
-def listings(id,name):
-    html = get_url('http://%s.yo.tv/' % id)
+@plugin.route('/listings/<country_id>/<country_name>')
+def listings(country_id,country_name):
+    html = get_url('http://%s.yo.tv/' % country_id)
     
     channels = html.split('<li><a data-ajax="false"')
     videos = []
@@ -358,31 +357,24 @@ def listings(id,name):
         if img_match:
             img_url = img_match.group(1)
 
-        name = ''
-        number = ''
+        channel_name = ''
+        channel_number = ''
         name_match = re.search(r'href="/tv_guide/channel/(.*?)/(.*?)"', channel)
         if name_match:
-            number = name_match.group(1)
-            name = name_match.group(2)
-            #name = re.sub('_',' ',name)
+            channel_number = name_match.group(1)
+            channel_name = name_match.group(2)
         else:
             continue
-        channel_number = number
 
-        url = 'http://%s.yo.tv/tv_guide/channel/%s/%s' % (id,number,name)
+        channel_url = 'http://%s.yo.tv/tv_guide/channel/%s/%s' % (country_id,channel_number,channel_name)
 
-        label = "[COLOR yellow][B]%s[/B][/COLOR]" % (re.sub('_',' ',name))
+        label = "[COLOR yellow][B]%s[/B][/COLOR]" % (re.sub('_',' ',channel_name))
             
         item = {'label':label,'icon':img_url,'thumbnail':img_url}
-        item['path'] = plugin.url_for('listing', name=name, number=number, url=url)
-        
-        #if favourites == 'true':
-        #    if channel_number in favourite_channels:
-        #        items.append(item)
-        #else:
+        item['path'] = plugin.url_for('listing', country_id=country_id, channel_name=channel_name, channel_number=channel_number, channel_url=channel_url)
+
         items.append(item)
 
-    #
     plugin.set_content('episodes')    
     #TODO
     plugin.add_sort_method(xbmcplugin.SORT_METHOD_TITLE)
@@ -390,13 +382,12 @@ def listings(id,name):
     #plugin.set_view_mode(51)
     return items 
 
-@plugin.route('/channels/<id>/<name>')
-def channels(id,name):
-    html = get_url('http://%s.yo.tv/' % id)
+@plugin.route('/channels/<country_id>/<country_name>')
+def channels(country_id,country_name):
+    html = get_url('http://%s.yo.tv/' % country_id)
     
     channels = html.split('<li><a data-ajax="false"')
     videos = []
-    favourite_channels = plugin.get_storage('favourite_channels')
     items = []
     for channel in channels:
         img_url = ''
@@ -405,22 +396,21 @@ def channels(id,name):
         if img_match:
             img_url = img_match.group(1)
 
-        name = ''
-        number = ''
+        channel_name = ''
+        channel_number = ''
         name_match = re.search(r'href="/tv_guide/channel/(.*?)/(.*?)"', channel)
         if name_match:
-            number = name_match.group(1)
-            name = name_match.group(2)
+            channel_number = name_match.group(1)
+            channel_name = name_match.group(2)
         else:
             continue
-        channel_number = number
 
-        url = 'http://%s.yo.tv/tv_guide/channel/%s/%s' % (id,number,name)
+        url = 'http://%s.yo.tv/tv_guide/channel/%s/%s' % (id,channel_number,channel_name)
 
-        label = "[COLOR yellow][B]%s[/B][/COLOR]" % (re.sub('_',' ',name))
+        label = "[COLOR yellow][B]%s[/B][/COLOR]" % (re.sub('_',' ',channel_name))
             
         item = {'label':label,'icon':img_url,'thumbnail':img_url}
-        item['path'] = plugin.url_for('channel', id=id, name=name, number=number)
+        item['path'] = plugin.url_for('channel', country_id=country_id, channel_name=channel_name, channel_number=channel_number)
         
         items.append(item)
 
@@ -428,15 +418,14 @@ def channels(id,name):
     plugin.set_view_mode(51)
     return items    
     
-@plugin.route('/now_nextdk/<id>/<name>')
-def now_next(id,name):
-    channel_name = name
-    html = get_url('http://%s.yo.tv/' % id)
+@plugin.route('/now_next/<country_id>/<country_name>')
+def now_next(country_id,country_name):
+    channel_name = country_name
+    html = get_url('http://%s.yo.tv/' % country_id)
 
     
     channels = html.split('<li><a data-ajax="false"')
     videos = []
-    favourite_channels = plugin.get_storage('favourite_channels')
     items = []
     for channel in channels:
         img_url = ''
@@ -445,16 +434,14 @@ def now_next(id,name):
         if img_match:
             img_url = img_match.group(1)
 
-        name = ''
-        number = ''
+        channel_name = ''
+        channel_number = ''
         name_match = re.search(r'href="/tv_guide/channel/(.*?)/(.*?)"', channel)
         if name_match:
-            number = name_match.group(1)
-            name = name_match.group(2)
+            channel_number = name_match.group(1)
+            channel_name = name_match.group(2)
         else:
             continue
-           
-        channel_number = '0'
 
         start = ''
         program = ''
@@ -478,14 +465,14 @@ def now_next(id,name):
         else:
             pass
 
-        channel_name = plugin.get_setting('channel_name')
-        if  channel_name == 'true':
-            label = "[COLOR yellow][B]%s[/B][/COLOR] %s [COLOR orange][B]%s[/B][/COLOR] %s [COLOR white][B]%s[/B][/COLOR] %s [COLOR grey][B]%s[/B][/COLOR]" % (re.sub('_',' ',name),start,program,next_start,next_program,after_start,after_program)
+        show_channel_name = plugin.get_setting('show_channel_name')
+        if  show_channel_name == 'true':
+            label = "[COLOR yellow][B]%s[/B][/COLOR] %s [COLOR orange][B]%s[/B][/COLOR] %s [COLOR white][B]%s[/B][/COLOR] %s [COLOR grey][B]%s[/B][/COLOR]" % (re.sub('_',' ',channel_name),start,program,next_start,next_program,after_start,after_program)
         else:
             label = "%s [COLOR orange][B]%s[/B][/COLOR] %s [COLOR white][B]%s[/B][/COLOR] %s [COLOR grey][B]%s[/B][/COLOR]" % (start,program,next_start,next_program,after_start,after_program)
             
         item = {'label':label,'icon':img_url,'thumbnail':img_url}
-        item['path'] = plugin.url_for('channel', id=id, name=name, number=number)
+        item['path'] = plugin.url_for('channel', country_id=country_id, channel_name=channel_name, channel_number=channel_number)
         
         items.append(item)
 
@@ -580,22 +567,22 @@ def store_channels():
         except:
             pass
 
-@plugin.route('/country/<id>/<name>')
-def country(id,name):
+@plugin.route('/country/<country_id>/<country_name>')
+def country(country_id,country_name):
     items = [  
     {
-        'label': '[COLOR red][B]%s[/B][/COLOR]: [COLOR green]Now Next After[/COLOR]' % name,
-        'path': plugin.url_for('now_next', id=id, name=name)
+        'label': '[COLOR red][B]%s[/B][/COLOR]: [COLOR green]Now Next After[/COLOR]' % country_name,
+        'path': plugin.url_for('now_next', country_id=country_id, country_name=country_name)
 
     },
     {
-        'label': '[COLOR red][B]%s[/B][/COLOR]: [COLOR yellow]Channels[/COLOR]' % name,
-        'path': plugin.url_for('channels', id=id, name=name)
+        'label': '[COLOR red][B]%s[/B][/COLOR]: [COLOR yellow]Channels[/COLOR]' % country_name,
+        'path': plugin.url_for('channels', country_id=country_id, country_name=country_name)
 
     },     
     {
-        'label': '[COLOR red][B]%s[/B][/COLOR]: [COLOR red]Listings[/COLOR]' % name,
-        'path': plugin.url_for('listings', id=id, name=name)
+        'label': '[COLOR red][B]%s[/B][/COLOR]: [COLOR red]Listings[/COLOR]' % country_name,
+        'path': plugin.url_for('listings', country_id=country_id, country_name=country_name)
 
     },
     ]
@@ -610,9 +597,9 @@ def countries():
     
     list_items = re.findall(r'<li><a href="http://(.*?)\.yo\.tv"  >(.*?)</a></li>',html,flags=(re.DOTALL | re.MULTILINE))
     
-    for (id,name) in list_items:
-        name = name.encode("utf8")
-        items.append({'label': '[COLOR red][B]%s[/B][/COLOR]' % name,'path': plugin.url_for('country', id=id, name=name)})
+    for (country_id,country_name) in list_items:
+        country_name = country_name.encode("utf8")
+        items.append({'label': '[COLOR red][B]%s[/B][/COLOR]' % country_name,'path': plugin.url_for('country', country_id=country_id, country_name=country_name)})
 
     plugin.set_content('episodes')    
     plugin.set_view_mode(51)
