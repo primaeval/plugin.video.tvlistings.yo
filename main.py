@@ -31,7 +31,6 @@ def get_tvdb_id(name):
   
 @plugin.route('/play/<channel>/<title>/<season>/<episode>')
 def play(channel,title,season,episode):
-    #log2(episode)
     channel_number = plugin.get_storage('channel_number')
     #channel_items = play_channel(channel_number[channel],channel)
     items = []
@@ -109,43 +108,6 @@ def play(channel,title,season,episode):
     return items
 
     
-@plugin.route('/play_channeldk/<name>/<number>')
-def play_channeldk(name,number):
-    if plugin.get_setting('ini_reload') == 'true':
-        store_channels()
-        plugin.set_setting('ini_reload','false')
-    
-    addons = plugin.get_storage('addons')
-    items = []
-    for addon in addons:
-        channels = plugin.get_storage(addon)
-        if not name in channels:
-            continue
-        path = channels[name]
-        try:
-            addon = xbmcaddon.Addon(addon)
-            if addon:
-                item = {
-                'label': '[COLOR yellow][B]%s[/B][/COLOR] [COLOR green][B]%s[/B][/COLOR]' % (name,addon.getAddonInfo('name')),
-                'path': path,
-                'is_playable': True,
-                }
-                items.append(item)
-        except:
-            pass
-
-    url = 'http://uk.yo.tv/tv_guide/channel/%s/%s' % (number,name)
-        
-    item = {
-    'label': '[COLOR yellow][B]%s[/B][/COLOR] [COLOR red][B]Listing[/B][/COLOR]' % (name),
-    'path': plugin.url_for('listingdk', name=name,number=number,url=url),
-    'is_playable': False,
-    }
-    items.append(item)
-        
-    return items
-    
-    
 @plugin.route('/channel/<id>/<name>/<number>')
 def channel(id,name,number):
     if plugin.get_setting('ini_reload') == 'true':
@@ -202,9 +164,6 @@ def local_time(ttime,year,month,day):
             if hour == 12:
                 hour = 0
 
-        log((year))
-        log((month))
-        log((day))
         utc_dt = datetime(int(year),int(month),int(day),hour,minute,0)
         loc_dt = utc2local(utc_dt)
         ttime = "%02d:%02d" % (loc_dt.hour,loc_dt.minute)
@@ -224,8 +183,8 @@ def listing(name,number,url):
     for table in tables:
 
         thumb = ''
-        season = ''
-        episode = ''
+        season = '0'
+        episode = '0'
         episode_title = ''
         genre = ''
         plot = ''
@@ -245,8 +204,6 @@ def listing(name,number,url):
         ttime = ''
         match = re.search(r'<span class="time">(.*?)</span>',table)
         if match:
-            #TODO
-            #now = datetime.now()
             ttime = local_time(match.group(1),year,month,day)
             
         title = ''
@@ -254,15 +211,15 @@ def listing(name,number,url):
         if match:
             title = match.group(1)
 
-        
         path = plugin.url_for('play', channel=number,title=title.encode("utf8"),season=season,episode=episode)
         
         if title:
+            nice_name = re.sub('_',' ',name)
             if  plugin.get_setting('channel_name') == 'true':
                 if plugin.get_setting('show_plot') == 'true':
-                    label = "[COLOR yellow][B]%s[/B][/COLOR] %s [COLOR orange][B]%s[/B][/COLOR] %s" % (name,ttime,title,plot)
+                    label = "[COLOR yellow][B]%s[/B][/COLOR] %s [COLOR orange][B]%s[/B][/COLOR] %s" % (nice_name,ttime,title,plot)
                 else:
-                    label = "[COLOR yellow][B]%s[/B][/COLOR] %s [COLOR orange][B]%s[/B][/COLOR]" % (name,ttime,title)
+                    label = "[COLOR yellow][B]%s[/B][/COLOR] %s [COLOR orange][B]%s[/B][/COLOR]" % (nice_name,ttime,title)
             else:
                 if plugin.get_setting('show_plot') == 'true':
                     label = "%s [COLOR orange][B]%s[/B][/COLOR] %s" % (ttime,title,plot)
@@ -276,7 +233,6 @@ def listing(name,number,url):
             items.append(item)
         else:
             pass
-            
             
         match = re.search(r'<li class="dt">(.*?)</li>',table)
         if match:
@@ -297,99 +253,94 @@ def listing(name,number,url):
     return items
     
 
-    
-def channel_listing_item(name,number):
-    thumb = "http://my.tvguide.co.uk/channel_logos/60x35/%s.png" % number
-    url = 'http://my.tvguide.co.uk/channellisting.asp?ch=%s' % number
-    label = '[COLOR yellow][B]%s[/B][/COLOR]' % name
-    item = {'label': label, 'thumbnail': thumb, 'path': plugin.url_for('listing', name=name.encode("utf8"),number=number, url=url)}
-    return item
-   
+ 
 def get_url(url):
     headers = {'user-agent': 'Mozilla/5.0 (BB10; Touch) AppleWebKit/537.10+ (KHTML, like Gecko) Version/10.0.9.2372 Mobile Safari/537.10+'}
-    r = requests.get(url,headers=headers)
-    html = HTMLParser.HTMLParser().unescape(r.content.decode('utf-8'))
-    return html
-   
-def load_channelsdk():
-    if plugin.get_setting('channels_reload') == 'true':
-        plugin.set_setting('channels_reload','false')
-        #r = requests.get('http://uk.yo.tv/')
-        html = get_url('http://uk.yo.tv/')
-        
-        #TODO
-    
-        match = re.search(r'<select name="channelid">(.*?)</select>',html,flags=(re.DOTALL | re.MULTILINE))
-        if not match:
-            return
-        if not xbmcvfs.exists('special://userdata/addon_data/plugin.video.tvlistings.yo/myaddons.ini'):
-            f = xbmcvfs.File('special://userdata/addon_data/plugin.video.tvlistings.yo/myaddons.ini','w')
-            f.close()
-        f = xbmcvfs.File('special://userdata/addon_data/plugin.video.tvlistings.yo/template.ini','w')
-        f.write("# WARNING Make a copy of this file.\n# It will be overwritten on the next channel reload.\n[plugin.video.all]\n")
-        
-        channels = re.findall(r'<option value=(.*?)>(.*?)</option>',match.group(1),flags=(re.DOTALL | re.MULTILINE))
-
-        channel_number = plugin.get_storage('channel_number')
-        for channel in channels:
-            name = channel[1]
-            number = channel[0]
-            channel_number[number] = name
-            line = "%s=\n" % name
-            f.write(line.encode("utf8"))
-        
-        f.write("[plugin.video.now_next_after]\n")
-        r = requests.get('http://www.tvguide.co.uk/mobile/')
-        html = r.text
-        channels = html.split('<div class="div-channel-progs">')
-        for channel in channels:
-            match = re.search(r'href="http://www\.tvguide\.co\.uk/mobile/channellisting\.asp\?ch=(.*?)"', channel)
-            if match:
-                number=match.group(1)
-                name= channel_number[number]
-                line = "%s=\n" % name
-                f.write(line.encode("utf8"))
-                
-        f.close()
-   
+    try:
+        r = requests.get(url,headers=headers)
+        html = HTMLParser.HTMLParser().unescape(r.content.decode('utf-8'))
+        return html
+    except:
+        return ''
+  
 def load_channels():
-    if plugin.get_setting('channels_reload') == 'true':
-        plugin.set_setting('channels_reload','false')
-        r = requests.get('http://www.tvguide.co.uk/')
-        html = r.text
+    pass
+
+def store_channels():
+    if plugin.get_setting('ini_reload') == 'true':
+        plugin.set_setting('ini_reload','false')
+    else:
+        return
+        
+    addons = plugin.get_storage('addons')
+    items = []
+    for addon in addons:
+        channels = plugin.get_storage(addon)
+        channels.clear()
+    addons.clear()
+
+    ini_files = [plugin.get_setting('ini_file1'),plugin.get_setting('ini_file2')]
     
-        match = re.search(r'<select name="channelid">(.*?)</select>',html,flags=(re.DOTALL | re.MULTILINE))
-        if not match:
-            return
+    for ini in ini_files:
+        try:
+            f = xbmcvfs.File(ini)
+            items = f.read().splitlines()
+            f.close()
+            addon = 'nothing'
+            for item in items:
+                if item.startswith('['):
+                    addon = item.strip('[] \t')
+                elif item.startswith('#'):
+                    pass
+                else:
+                    name_url = item.split('=',1)
+                    if len(name_url) == 2:
+                        name = name_url[0]
+                        url = name_url[1]
+                        if url:
+                            channels = plugin.get_storage(addon)
+                            channels[name] = url
+                            addons = plugin.get_storage('addons')
+                            addons[addon] = addon
+        except:
+            pass
+    
+   
+def make_templates():
+    if plugin.get_setting('make_templates') == 'true':
+        plugin.set_setting('make_templates','false')
+        
+        xbmcvfs.mkdir('special://userdata/addon_data/plugin.video.tvlistings.yo')
         if not xbmcvfs.exists('special://userdata/addon_data/plugin.video.tvlistings.yo/myaddons.ini'):
             f = xbmcvfs.File('special://userdata/addon_data/plugin.video.tvlistings.yo/myaddons.ini','w')
             f.close()
-        f = xbmcvfs.File('special://userdata/addon_data/plugin.video.tvlistings.yo/template.ini','w')
-        f.write("# WARNING Make a copy of this file.\n# It will be overwritten on the next channel reload.\n[plugin.video.all]\n")
         
-        channels = re.findall(r'<option value=(.*?)>(.*?)</option>',match.group(1),flags=(re.DOTALL | re.MULTILINE))
+        xbmcvfs.mkdir('special://userdata/addon_data/plugin.video.tvlistings.yo/templates')
+        html = get_url("http://www.yo.tv")
+        items = []
+        list_items = re.findall(r'<li><a href="http://(.*?)\.yo\.tv"  >(.*?)</a></li>',html,flags=(re.DOTALL | re.MULTILINE))
+        for (id,name) in list_items:          
+            file_name = 'special://userdata/addon_data/plugin.video.tvlistings.yo/templates/%s.ini' % id
+            f = xbmcvfs.File(file_name,'w')
+            str = "# WARNING Make a copy of this file.\n# It will be overwritten on the next channel reload.\n\n# %s.ini - %s \n\n[plugin.video.all]\n" % (id,name)
+            f.write(str.encode("utf8"))
+            
+            html = get_url('http://%s.yo.tv/' % id)
+            channels = html.split('<li><a data-ajax="false"')
+            unique_channels = {}
+            for channel in channels:
+                name_match = re.search(r'href="/tv_guide/channel/(.*?)/(.*?)"', channel)
+                if name_match:
+                    number = name_match.group(1)
+                    name = name_match.group(2)
+                    unique_channels[name] = number
+                    
+            for name in sorted(unique_channels):
+                str = "%s=\n" % (name)
+                f.write(str.encode("utf8"))
+            
+            f.close()
 
-        channel_number = plugin.get_storage('channel_number')
-        for channel in channels:
-            name = channel[1]
-            number = channel[0]
-            channel_number[number] = name
-            line = "%s=\n" % name
-            f.write(line.encode("utf8"))
-        
-        f.write("[plugin.video.now_next_after]\n")
-        r = requests.get('http://www.tvguide.co.uk/mobile/')
-        html = r.text
-        channels = html.split('<div class="div-channel-progs">')
-        for channel in channels:
-            match = re.search(r'href="http://www\.tvguide\.co\.uk/mobile/channellisting\.asp\?ch=(.*?)"', channel)
-            if match:
-                number=match.group(1)
-                name= channel_number[number]
-                line = "%s=\n" % name
-                f.write(line.encode("utf8"))
-                
-        f.close()
         
         
 @plugin.route('/listings/<id>/<name>')
@@ -670,6 +621,9 @@ def countries():
     
 @plugin.route('/')
 def index():
+    make_templates()
+    store_channels()
+    load_channels()
     items = [  
     {
         'label': '[COLOR red][B]Countries[/B][/COLOR]',
