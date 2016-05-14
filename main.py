@@ -170,6 +170,7 @@ def local_time(ttime,year,month,day):
 
 @plugin.route('/listing/<country_id>/<channel_name>/<channel_number>/<channel_url>')
 def listing(country_id,channel_name,channel_number,channel_url):
+    log2(channel_name)
     html = get_url(channel_url)
 
     items = []
@@ -214,7 +215,8 @@ def listing(country_id,channel_name,channel_number,channel_url):
         
         if title:
             nice_name = re.sub('_',' ',channel_name)
-            if  plugin.get_setting('channel_name') == 'true':
+            log2(nice_name)
+            if  plugin.get_setting('show_channel_name') == 'true':
                 if plugin.get_setting('show_plot') == 'true':
                     label = "[COLOR yellow][B]%s[/B][/COLOR] %s [COLOR orange][B]%s[/B][/COLOR] %s" % (nice_name,ttime,title,plot)
                 else:
