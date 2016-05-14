@@ -311,6 +311,8 @@ def make_templates():
     if plugin.get_setting('make_templates') == 'true':
         plugin.set_setting('make_templates','false')
         
+        pDialog = xbmcgui.DialogProgressBG()
+        pDialog.create("creating template .ini files")
         xbmcvfs.mkdir('special://userdata/addon_data/plugin.video.tvlistings.yo')
         if not xbmcvfs.exists('special://userdata/addon_data/plugin.video.tvlistings.yo/myaddons.ini'):
             f = xbmcvfs.File('special://userdata/addon_data/plugin.video.tvlistings.yo/myaddons.ini','w')
@@ -320,7 +322,12 @@ def make_templates():
         html = get_url("http://www.yo.tv")
         items = []
         list_items = re.findall(r'<li><a href="http://(.*?)\.yo\.tv"  >(.*?)</a></li>',html,flags=(re.DOTALL | re.MULTILINE))
-        for (id,name) in list_items:          
+        total = len(list_items)
+        count = 0
+        for (id,name) in list_items:   
+            percent = 100.0 *count/total
+            pDialog.update(int(percent),name)
+            count = count + 1
             file_name = 'special://userdata/addon_data/plugin.video.tvlistings.yo/templates/%s.ini' % id
             f = xbmcvfs.File(file_name,'w')
             str = "# WARNING Make a copy of this file.\n# It will be overwritten on the next channel reload.\n\n# %s.ini - %s \n\n[plugin.video.all]\n" % (id,name)
