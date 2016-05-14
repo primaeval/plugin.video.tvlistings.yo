@@ -1,6 +1,6 @@
 # plugin.video.tvlistings.yo
 
-# TV Listings (www.yo.tv)
+# TV Listings (yo.tv)
 
 yo.tv Listings with catchup playback via Meta4Kodi and live playback via addons.
 

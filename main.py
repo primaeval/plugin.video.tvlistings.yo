@@ -4,8 +4,6 @@ import re
 
 import requests
 
-#import resources.lib.pytz
-#from resources.lib.pytz import timezone
 from datetime import datetime
 import time
 
@@ -324,10 +322,10 @@ def load_channelsdk():
         match = re.search(r'<select name="channelid">(.*?)</select>',html,flags=(re.DOTALL | re.MULTILINE))
         if not match:
             return
-        if not xbmcvfs.exists('special://userdata/addon_data/plugin.video.tvlistings/myaddons.ini'):
-            f = xbmcvfs.File('special://userdata/addon_data/plugin.video.tvlistings/myaddons.ini','w')
+        if not xbmcvfs.exists('special://userdata/addon_data/plugin.video.tvlistings.yo/myaddons.ini'):
+            f = xbmcvfs.File('special://userdata/addon_data/plugin.video.tvlistings.yo/myaddons.ini','w')
             f.close()
-        f = xbmcvfs.File('special://userdata/addon_data/plugin.video.tvlistings/template.ini','w')
+        f = xbmcvfs.File('special://userdata/addon_data/plugin.video.tvlistings.yo/template.ini','w')
         f.write("# WARNING Make a copy of this file.\n# It will be overwritten on the next channel reload.\n[plugin.video.all]\n")
         
         channels = re.findall(r'<option value=(.*?)>(.*?)</option>',match.group(1),flags=(re.DOTALL | re.MULTILINE))
@@ -363,10 +361,10 @@ def load_channels():
         match = re.search(r'<select name="channelid">(.*?)</select>',html,flags=(re.DOTALL | re.MULTILINE))
         if not match:
             return
-        if not xbmcvfs.exists('special://userdata/addon_data/plugin.video.tvlistings/myaddons.ini'):
-            f = xbmcvfs.File('special://userdata/addon_data/plugin.video.tvlistings/myaddons.ini','w')
+        if not xbmcvfs.exists('special://userdata/addon_data/plugin.video.tvlistings.yo/myaddons.ini'):
+            f = xbmcvfs.File('special://userdata/addon_data/plugin.video.tvlistings.yo/myaddons.ini','w')
             f.close()
-        f = xbmcvfs.File('special://userdata/addon_data/plugin.video.tvlistings/template.ini','w')
+        f = xbmcvfs.File('special://userdata/addon_data/plugin.video.tvlistings.yo/template.ini','w')
         f.write("# WARNING Make a copy of this file.\n# It will be overwritten on the next channel reload.\n[plugin.video.all]\n")
         
         channels = re.findall(r'<option value=(.*?)>(.*?)</option>',match.group(1),flags=(re.DOTALL | re.MULTILINE))

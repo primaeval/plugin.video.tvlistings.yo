@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <addon id="plugin.video.tvlistings.yo"
 version="0.0.1"
-name="TV Listings (www.yo.tv)"
+name="TV Listings (yo.tv)"
 provider-name="primaeval">
 <requires>
   <import addon="xbmc.python" version="2.20.0"/>
@@ -13,8 +13,8 @@ provider-name="primaeval">
 </extension>
 <extension point="xbmc.addon.metadata">
   <summary lang="en">TV Listings (yo.tv)</summary>
-  <description lang="en">TV Listings (www.yo.tv). Meta4Kodi catchup playback. Addon ini files for live stream selection.</description>
-  <disclaimer lang="en">Front end to www.yo.tv</disclaimer>
+  <description lang="en">TV Listings (yo.tv). Meta4Kodi catchup playback. Addon ini files for live stream selection.</description>
+  <disclaimer lang="en">Front end to yo.tv</disclaimer>
 </extension>
 </addon>
 
