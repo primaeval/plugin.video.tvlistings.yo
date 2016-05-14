@@ -3,6 +3,7 @@
 # TV Listings (yo.tv)
 
 yo.tv Listings with catchup playback via Meta4Kodi and live playback via addons.
+Covers 54 countries (not currently working: US, France, Germany)
 
 * Favourite Channels
 * Now/Next/After
