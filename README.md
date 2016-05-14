@@ -3,6 +3,7 @@
 # TV Listings (yo.tv)
 
 yo.tv Listings with catchup playback via Meta4Kodi and live playback via addons.
+
 Covers 54 countries (not currently working: US, France, Germany)
 
 * Favourite Channels
@@ -10,9 +11,9 @@ Covers 54 countries (not currently working: US, France, Germany)
 * Channel Listings
 
 ## Notes
-* Creates <country>.ini and myaddons.ini files with channel names on first run in userdata\addon_data\plugin.video.tvlistings.yo directory.
-* Favourites: Toggle has strange behaviour. On Windows it goes back to the top of the list. On Android it does not refresh on toggle.
-* Force channel and ini file reload in the Settings if you chage addons.ini or myaddons.ini.
+* Setting to create template [country].ini and myaddons.ini files with channel names in userdata\addon_data\plugin.video.tvlistings.yo directory.
+* I recommend using Super Favourites to organise your favourite channels.
+* Force ini file reload in the Settings if you change addons.ini or myaddons.ini.
 
 ## Disclaimer
 * Acts as a front end to yo.tv. It is not a product or endorsed addon of yo.tv.
