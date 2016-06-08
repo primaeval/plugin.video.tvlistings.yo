@@ -249,8 +249,6 @@ def listing(country_id,channel_name,channel_number,channel_url):
                 day = match.group(3)
                 year = match.group(4)
 
-    plugin.set_content('episodes')    
-    plugin.set_view_mode(51)
     return items
     
 
@@ -388,7 +386,6 @@ def listings(country_id,country_name):
     #TODO
     plugin.add_sort_method(xbmcplugin.SORT_METHOD_TITLE)
     plugin.add_sort_method(xbmcplugin.SORT_METHOD_UNSORTED)
-    #plugin.set_view_mode(51)
     return items 
 
 @plugin.route('/channels/<country_id>/<country_name>')
@@ -424,7 +421,6 @@ def channels(country_id,country_name):
         items.append(item)
 
     plugin.add_sort_method(xbmcplugin.SORT_METHOD_TITLE)
-    plugin.set_view_mode(51)
     return items    
     
 @plugin.route('/now_next/<country_id>/<country_name>')
@@ -485,7 +481,6 @@ def now_next(country_id,country_name):
         
         items.append(item)
 
-    plugin.set_view_mode(51)
     return items
 
    
@@ -536,7 +531,6 @@ def set_favourites():
         item['path'] = path 
         item['thumbnail'] = "http://my.tvguide.co.uk/channel_logos/60x35/%s.png" % number
         items.append(item)
-    plugin.set_view_mode(51)    
     sorted_items = sorted(items, key=lambda item: re.sub('\[.*?\]','',item['label']))
     top_items.extend(sorted_items)
     return top_items
@@ -576,13 +570,13 @@ def countries():
         country_name = country_name.encode("utf8")
         items.append({'label': '[COLOR red][B]%s[/B][/COLOR]' % country_name,'path': plugin.url_for('country', country_id=country_id, country_name=country_name)})
 
-    plugin.set_content('episodes')    
-    plugin.set_view_mode(51)
     return items
     
     
+index_page = False
 @plugin.route('/')
 def index():
+    index_page = True
     items = [  
     {
         'label': '[COLOR red][B]Countries[/B][/COLOR]',
@@ -597,4 +591,5 @@ if __name__ == '__main__':
     store_channels()
     #load_channels()
     plugin.run()
-    
+    if index_page == False:
+        plugin.set_view_mode(51)
